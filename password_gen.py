@@ -2,66 +2,68 @@ import streamlit as st
 import secrets
 import string
 
-# --- 1. CONFIGURACIÓN ---
+# --- 1. CONFIGURATION ---
 st.set_page_config(page_title="SafePass Gen", page_icon="🔐", layout="centered")
 
-# Inicializamos el historial si no existe
-if 'historial' not in st.session_state:
-    st.session_state.historial = []
+# Initialize history and state if they don't exist
+if 'history' not in st.session_state:
+    st.session_state.history = []
 if 'last_password' not in st.session_state:
     st.session_state.last_password = ""
 
-def generar_contrasena(largo, mayus, nums, sims):
-    caracteres = string.ascii_lowercase
-    if mayus: caracteres += string.ascii_uppercase
-    if nums:  caracteres += string.digits
-    if sims:  caracteres += string.punctuation
-    return ''.join(secrets.choice(caracteres) for _ in range(largo))
+def generate_password(length, use_upper, use_nums, use_syms):
+    characters = string.ascii_lowercase
+    if use_upper: characters += string.ascii_uppercase
+    if use_nums:  characters += string.digits
+    if use_syms:  characters += string.punctuation
+    return ''.join(secrets.choice(characters) for _ in range(length))
 
-# --- 2. BARRA LATERAL ---
-st.sidebar.header("⚙️ Configuración")
-longitud = st.sidebar.slider("Longitud", 8, 32, 12)
+# --- 2. SIDEBAR ---
+st.sidebar.header("⚙️ Settings")
+password_length = st.sidebar.slider("Length", 8, 32, 12)
 
-use_upper = st.sidebar.checkbox("Mayúsculas", value=True)
-use_digits = st.sidebar.checkbox("Números", value=True)
-use_symbols = st.sidebar.checkbox("Símbolos", value=True)
+use_uppercase = st.sidebar.checkbox("Uppercase", value=True)
+use_digits = st.sidebar.checkbox("Numbers", value=True)
+use_symbols = st.sidebar.checkbox("Symbols", value=True)
 
-# Sección de Historial en Sidebar
+# History Section in Sidebar
 st.sidebar.divider()
-st.sidebar.subheader("🕒 Recientes")
-if st.session_state.historial:
-    for p in st.session_state.historial:
+st.sidebar.subheader("🕒 Recent")
+if st.session_state.history:
+    for p in st.session_state.history:
         st.sidebar.text(p)
     
-    if st.sidebar.button("🗑️ Limpiar Historial", use_container_width=True):
-        st.session_state.historial = []
+    if st.sidebar.button("🗑️ Clear History", use_container_width=True):
+        st.session_state.history = []
+        st.session_state.last_password = ""
         st.rerun()
 else:
-    st.sidebar.info("No hay historial.")
+    st.sidebar.info("No history yet.")
 
-# --- 3. CUERPO PRINCIPAL ---
-st.title("🔐 SafePass: Generador de Contraseñas")
-st.write("Genera claves seguras con estándar criptográfico.")
+# --- 3. MAIN BODY ---
+st.title("🔐 SafePass: Password Generator")
+st.write("Generate secure keys with cryptographic standards.")
 
-if st.button("Generar Nueva Contraseña ⚡", type="primary", use_container_width=True):
-    nueva_pass = generar_contrasena(longitud, use_upper, use_digits, use_symbols)
-    st.session_state.last_password = nueva_pass
-    st.session_state.historial.insert(0, nueva_pass)
-    st.session_state.historial = st.session_state.historial[:5]
+if st.button("Generate New Password ⚡", type="primary", use_container_width=True):
+    new_pass = generate_password(password_length, use_uppercase, use_digits, use_symbols)
+    st.session_state.last_password = new_pass
+    # Keep only the last 5 entries in history
+    st.session_state.history.insert(0, new_pass)
+    st.session_state.history = st.session_state.history[:5]
 
-# Mostrar la contraseña actual si existe
+# Show current password if it exists
 if st.session_state.last_password:
-    st.subheader("Tu contraseña segura:")
+    st.subheader("Your secure password:")
     st.code(st.session_state.last_password)
     
-    # Medidor de seguridad
-    puntos = sum([longitud >= 12, use_upper, use_digits, use_symbols])
+    # Strength Meter Logic
+    score = sum([password_length >= 12, use_uppercase, use_digits, use_symbols])
     
-    if puntos <= 2:
-        st.error("Nivel: **Débil** ⚠️ (Mejora la configuración)")
-    elif puntos == 3:
-        st.warning("Nivel: **Media** 🆗")
+    if score <= 2:
+        st.error("Strength: **Weak** ⚠️ (Improve your settings)")
+    elif score == 3:
+        st.warning("Strength: **Medium** 🆗")
     else:
-        st.success("Nivel: **Robusta** 💪 (Nivel NASA)")
+        st.success("Strength: **Strong** 💪 (NASA Level)")
 else:
-    st.info("Haz clic en el botón para generar tu primera contraseña.")
+    st.info("Click the button above to generate your first password.")
